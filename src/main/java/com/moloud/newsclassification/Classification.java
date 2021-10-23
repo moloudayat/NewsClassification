@@ -12,6 +12,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.json.simple.JSONArray;
@@ -114,8 +115,8 @@ public class Classification {
             testSet[index][0] = news;
         }
     }
-    
-    public void buildUnigarm(){
+
+    public void buildUnigarm() {
         features.clear();
         for (int index = 0; index < trainSet.length; index++) {
             String[] words = trainSet[index][0].split(" ");
@@ -131,8 +132,8 @@ public class Classification {
                 }
             }
         }
-        
-         // train.arff
+
+        // train.arff
         try {
             BufferedWriter trainFile = new BufferedWriter(new FileWriter("train.arff"));
             trainFile.write("@relation train");
@@ -213,27 +214,151 @@ public class Classification {
             Logger.getLogger(MainForm.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-       public String naiveBaseClassify() {
-           String percision="";
-            try {
-                Instances trainSet = new Instances(new BufferedReader(new FileReader("F:/AI/nlp/NewsClassification/train.arff")));
-                Instances testSet = new Instances(new BufferedReader(new FileReader("F:/AI/nlp/NewsClassification/test.arff")));
-                trainSet.setClassIndex(trainSet.numAttributes() - 1);
-                testSet.setClassIndex(testSet.numAttributes() - 1);
-                NaiveBayes naiveBayes = new NaiveBayes();
-                System.out.print("Training on " + trainSet.size() + " examples... ");
-                naiveBayes.buildClassifier(trainSet);
-                System.out.println("done.");
-                Evaluation eval = new Evaluation(testSet);
-                eval.evaluateModel(naiveBayes, testSet);
-                percision=String.format("%.2f", eval.pctCorrect());
-            } catch (Exception ex) {
-                Logger.getLogger(MainForm.class.getName()).log(Level.SEVERE, null, ex);
-                System.err.println("Unable to train classifier.");
-                System.err.println("\t" + ex.getMessage());
+
+    public void buildTfIdf() {
+        features.clear();
+        HashMap<String, Integer> sigmaTermFrequency = new HashMap<String, Integer>();
+        HashMap<String, Integer> documentFrequency = new HashMap<String, Integer>();
+        for (int index = 0; index < trainSet.length; index++) {
+            String[] words = trainSet[index][0].split(" ");
+            HashMap<String, Integer> wordsDistict = new HashMap<String, Integer>();
+            for (int index2 = 0; index2 < words.length; index2++) {
+                wordsDistict.put(words[index2], 1);
+                if (sigmaTermFrequency.containsKey(words[index2])) {
+                    sigmaTermFrequency.put(words[index2], sigmaTermFrequency.get(words[index2]) + 1);
+                } else {
+                    sigmaTermFrequency.put(words[index2], 1);
+                }
             }
-            return percision;
-       }
-                      
+            for (String word : wordsDistict.keySet()) {
+                if (documentFrequency.containsKey(word)) {
+                    documentFrequency.put(word, documentFrequency.get(word) + 1);
+                } else {
+                    documentFrequency.put(word, 1);
+                }
+            }
+        }
+        for (String word : sigmaTermFrequency.keySet()) {
+            features.add(word);
+        }
+
+        // train.arff
+        try {
+            BufferedWriter trainFile = new BufferedWriter(new FileWriter("train.arff"));
+            trainFile.write("@relation train");
+            trainFile.write(System.getProperty("line.separator"));
+            trainFile.write(System.getProperty("line.separator"));
+
+            for (int index = 0; index < features.size(); index++) {
+                trainFile.write("@attribute " + features.get(index) + " numeric");
+                trainFile.write(System.getProperty("line.separator"));
+            }
+            trainFile.write("@attribute class {");
+            for (int iterator = 0; iterator < classes.length - 1; iterator++) {
+                trainFile.write(classes[iterator] + " ,");
+            }
+            trainFile.write(classes[classes.length - 1] + "}");
+            trainFile.write(System.getProperty("line.separator"));
+            trainFile.write(System.getProperty("line.separator"));
+            trainFile.write("@data");
+            trainFile.write(System.getProperty("line.separator"));
+            for (int index = 0; index < trainSet.length; index++) {
+                String[] words = trainSet[index][0].split(" ");
+                HashMap<String, Integer> termFrequency = new HashMap<String, Integer>();
+                for (int index2 = 0; index2 < words.length; index2++) {
+                    if (termFrequency.containsKey(words[index2])) {
+                        termFrequency.put(words[index2], termFrequency.get(words[index2]) + 1);
+                    } else {
+                        termFrequency.put(words[index2], 1);
+                    }
+                }
+                for (int index2 = 0; index2 < features.size(); index2++) {
+                    double tfIdf = 0.0;
+                    if (termFrequency.containsKey(features.get(index2))) {
+                        tfIdf = ((double) termFrequency.get(features.get(index2))) / sigmaTermFrequency.get(features.get(index2)); // calculate tf
+                        tfIdf = tfIdf * Math.log(((double) trainSet.length) / documentFrequency.get(features.get(index2)));
+                    }
+                    trainFile.write(String.valueOf(tfIdf) + ",");
+                }
+                trainFile.write(trainSet[index][1]);
+                trainFile.write(System.getProperty("line.separator"));
+            }
+            trainFile.close();
+        } catch (IOException ex) {
+            Logger.getLogger(MainForm.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        // test.arff
+        try {
+            BufferedWriter testFile = new BufferedWriter(new FileWriter("test.arff"));
+            testFile.write("@relation test");
+            testFile.write(System.getProperty("line.separator"));
+            testFile.write(System.getProperty("line.separator"));
+
+            for (int index = 0; index < features.size(); index++) {
+                testFile.write("@attribute " + features.get(index) + " numeric");
+                testFile.write(System.getProperty("line.separator"));
+            }
+            testFile.write("@attribute class {");
+            for (int iterator = 0; iterator < classes.length - 1; iterator++) {
+                testFile.write(classes[iterator] + " ,");
+            }
+            testFile.write(classes[classes.length - 1] + "}");
+            testFile.write(System.getProperty("line.separator"));
+            testFile.write(System.getProperty("line.separator"));
+            testFile.write("@data");
+            testFile.write(System.getProperty("line.separator"));
+            for (int index = 0; index < testSet.length; index++) {
+                String[] words = testSet[index][0].split(" ");
+                HashMap<String, Integer> termFrequency = new HashMap<String, Integer>();
+                for (int index2 = 0; index2 < words.length; index2++) {
+                    if (termFrequency.containsKey(words[index2])) {
+                        termFrequency.put(words[index2], termFrequency.get(words[index2]) + 1);
+                    } else {
+                        termFrequency.put(words[index2], 1);
+                    }
+                }
+                for (int index2 = 0; index2 < features.size(); index2++) {
+                    double tfIdf = 0.0;
+                    if (termFrequency.containsKey(features.get(index2))) {
+                        tfIdf = ((double) termFrequency.get(features.get(index2))) / sigmaTermFrequency.get(features.get(index2)); // calculate tf
+                        tfIdf = tfIdf * Math.log(((double) testSet.length) / documentFrequency.get(features.get(index2)));
+                    }
+                    testFile.write(String.valueOf(tfIdf) + ",");
+                }
+                testFile.write(testSet[index][1]);
+                testFile.write(System.getProperty("line.separator"));
+            }
+            testFile.close();
+        } catch (IOException ex) {
+            Logger.getLogger(MainForm.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public String naiveBaseClassify() {
+        String percision = "";
+        try {
+            Instances trainSet = new Instances(new BufferedReader(new FileReader("F:/AI/nlp/NewsClassification/train.arff")));
+            Instances testSet = new Instances(new BufferedReader(new FileReader("F:/AI/nlp/NewsClassification/test.arff")));
+            trainSet.setClassIndex(trainSet.numAttributes() - 1);
+            testSet.setClassIndex(testSet.numAttributes() - 1);
+            naiveBayes = new NaiveBayes();
+            System.out.print("Training on " + trainSet.size() + " examples... ");
+            naiveBayes.buildClassifier(trainSet);
+            System.out.println("done.");
+            eval = new Evaluation(testSet);
+            eval.evaluateModel(naiveBayes, testSet);
+            percision = String.format("%.2f", eval.pctCorrect());
+        } catch (Exception ex) {
+            Logger.getLogger(MainForm.class.getName()).log(Level.SEVERE, null, ex);
+            System.err.println("Unable to train classifier.");
+            System.err.println("\t" + ex.getMessage());
+        }
+        return percision;
+    }
+
+    public String getType(String news, boolean tokenize) {
+        String type = "";
+        return type;
+    }
+
 }
