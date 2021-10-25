@@ -8,17 +8,17 @@ The BBC NEWS dataset is broken into 1490 records for training and 735 for testin
 ## Preprocessing
 First and foremost step before classification is preprocessing which means cleaning and purifying data into a format that can be analyzed.
 
-### remove punctuations
+### Remove Punctuations
 This is the basic preprocessing that should be done for every text.
 
-### use lowercase letters
+### Use Lowercase Letters
 The majority of languages have several forms for each letter. Using one form for those does not change the meaning of texts. In this research all of the letters are converting lowercase format.
 
-### remove stopwords
+### Remove Stopwords
 Stopwords are the most common words that are used in every language. These words do not add specific meaning to the text. For reducing dataset size and training time, it is more beneficial to remove stopwords.
 For this purpose, I used All English Stopwords from kaggle which contains 733 words.
 
-## Feature selection
+## Feature Selection
 For predicting a suitable model for training, it is crucial to select proper features.
 
 ### Unigrams
@@ -35,3 +35,13 @@ Classification algorithms most commonly used for news classification are Naive B
 <p align="center" width="100%">
     <img  src="https://github.com/moloudayat/NewsClassification/blob/master/img/UI.PNG?raw=true&style=centerme"> 
 </p>
+
+|Train Accuracy%|Naive Bayes|Logistic|  SVM   |Decision tree| Random forest|
+|--------|-----------|--------|--------|-------------|--------------|
+|unigrams|   98.17%  | 97.35% | 100% |    97.50%   |100%|
+| TF-IDF |98.37%|92.51%|100%|97.60%|100%|
+#####
+|Test Accuracy%|Naive Bayes|Logistic|  SVM   |Decision tree| Random forest|
+|--------|-----------|--------|--------|-------------|--------------|
+|unigrams|   94.40%  | 95.50% | 96.86% |    84.56%   |93.95%|
+| TF-IDF |93.06%| 95.12%|94.18%|84.34%|90.60%
