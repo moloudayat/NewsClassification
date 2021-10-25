@@ -31,3 +31,7 @@ TF-IDF score represents the relative importance of a term in the document as wel
 
 ## Classification models
 Classification algorithms most commonly used for news classification are Naive Bayes, Logistic regression, Support Vector Machine (Linear kernel), Decision tree and Random forest
+
+<p align="center" width="100%">
+    <img  src="https://github.com/moloudayat/NewsClassification/blob/master/img/UI.PNG?raw=true&style=centerme"> 
+</p>
